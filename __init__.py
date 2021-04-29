@@ -29,10 +29,12 @@ bl_info = {
     "warning": "",
     "wiki_url": "https://github.com/theli-ua/K2-Blender/wiki",
     "tracker_url": "https://github.com/theli-ua/K2-Blender/issues",
+    "support": "TESTING",
     "category": "Import-Export"}
 
 if "bpy" in locals():
     import imp
+
     if "k2_import" in locals():
         imp.reload(k2_import)
     if "k2_export" in locals():
@@ -42,14 +44,15 @@ else:
 
 from bpy.props import StringProperty, BoolProperty, IntProperty
 
+
 class K2ImporterClip(bpy.types.Operator):
     '''Load K2/Silverlight clip data'''
     bl_idname = "import_clip.k2"
     bl_label = "Import K2 Clip"
 
     filepath = StringProperty(
-            subtype='FILE_PATH',
-            )
+        subtype='FILE_PATH',
+    )
     filter_glob = StringProperty(default="*.clip", options={'HIDDEN'})
 
     def execute(self, context):
@@ -62,24 +65,25 @@ class K2ImporterClip(bpy.types.Operator):
         wm.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
+
 class K2Importer(bpy.types.Operator):
     '''Load K2/Silverlight mesh data'''
     bl_idname = "import_mesh.k2"
     bl_label = "Import K2 Mesh"
 
     filepath = StringProperty(
-            subtype='FILE_PATH',
-            )
+        subtype='FILE_PATH',
+    )
     filter_glob = StringProperty(default="*.model", options={'HIDDEN'})
     flipuv = BoolProperty(
-            name="Flip UV",
-            description="Flip UV",
-            default=True,
-            )
+        name="Flip UV",
+        description="Flip UV",
+        default=True,
+    )
 
     def execute(self, context):
         from . import k2_import
-        k2_import.read(self.filepath,self.flipuv)
+        k2_import.read(self.filepath, self.flipuv)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -87,32 +91,34 @@ class K2Importer(bpy.types.Operator):
         wm.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
+
 class K2ClipExporter(bpy.types.Operator):
     '''Save K2 triangle clip data'''
     bl_idname = "export_clip.k2"
     bl_label = "Export K2 Clip"
 
     filepath = StringProperty(
-            subtype='FILE_PATH',
-            )
+        subtype='FILE_PATH',
+    )
     filter_glob = StringProperty(default="*.clip", options={'HIDDEN'})
     check_existing = BoolProperty(
-            name="Check Existing",
-            description="Check and warn on overwriting existing files",
-            default=True,
-            options={'HIDDEN'},
-            )
+        name="Check Existing",
+        description="Check and warn on overwriting existing files",
+        default=True,
+        options={'HIDDEN'},
+    )
     apply_modifiers = BoolProperty(
-            name="Apply Modifiers",
-            description="Use transformed mesh data from each object",
-            default=True,
-            )
-    frame_start = IntProperty(name="Start Frame", description="Starting frame for the animation", default=bpy.context.scene.frame_start)
-    frame_end = IntProperty(name="Ending Frame", description="Ending frame for the animation",default=bpy.context.scene.frame_end)
+        name="Apply Modifiers",
+        description="Use transformed mesh data from each object",
+        default=True,
+    )
+    frame_start = IntProperty(name="Start Frame", description="Starting frame for the animation", default=0)
+    frame_end = IntProperty(name="Ending Frame", description="Ending frame for the animation", default=1)
+
     def execute(self, context):
         from . import k2_export
-        k2_export.export_k2_clip(self.filepath,self.apply_modifiers,
-                self.frame_start,self.frame_end)
+        k2_export.export_k2_clip(self.filepath, self.apply_modifiers,
+                                 self.frame_start, self.frame_end)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -122,32 +128,33 @@ class K2ClipExporter(bpy.types.Operator):
         wm.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
+
 class K2MeshExporter(bpy.types.Operator):
     '''Save K2 triangle mesh data'''
     bl_idname = "export_mesh.k2"
     bl_label = "Export K2 Mesh"
 
     filepath = StringProperty(
-            subtype='FILE_PATH',
-            )
+        subtype='FILE_PATH',
+    )
     filter_glob = StringProperty(default="*.model", options={'HIDDEN'})
     check_existing = BoolProperty(
-            name="Check Existing",
-            description="Check and warn on overwriting existing files",
-            default=True,
-            options={'HIDDEN'},
-            )
+        name="Check Existing",
+        description="Check and warn on overwriting existing files",
+        default=True,
+        options={'HIDDEN'},
+    )
     apply_modifiers = BoolProperty(
-            name="Apply Modifiers",
-            description="Use transformed mesh data from each object",
-            default=True,
-            )
+        name="Apply Modifiers",
+        description="Use transformed mesh data from each object",
+        default=True,
+    )
 
     def execute(self, context):
         from . import k2_export
         k2_export.export_k2_mesh(self.filepath,
-                self.apply_modifiers
-                         )
+                                 self.apply_modifiers
+                                 )
 
         return {'FINISHED'}
 
@@ -181,6 +188,7 @@ def unregister():
 
     bpy.types.INFO_MT_file_import.remove(menu_import)
     bpy.types.INFO_MT_file_export.remove(menu_export)
+
 
 if __name__ == "__main__":
     register()
