@@ -1,6 +1,9 @@
 import bpy
 from bpy.props import StringProperty, BoolProperty, IntProperty
 
+from .export_k2_clip import export_k2_clip
+from .export_k2_mesh import export_k2_mesh
+
 
 class K2_OT_clip_importer(bpy.types.Operator):
     '''Load K2/Silverlight clip data'''
@@ -12,7 +15,7 @@ class K2_OT_clip_importer(bpy.types.Operator):
 
     def execute(self, context):
         from . import k2_import
-        k2_import.readclip(self.filepath)
+        k2_import.read_clip(self.filepath)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -70,7 +73,7 @@ class K2_OT_clip_exporter(bpy.types.Operator):
 
     def execute(self, context):
         from . import k2_export
-        k2_export.export_k2_clip(self.filepath, self.apply_modifiers, self.frame_start, self.frame_end)
+        export_k2_clip(self.filepath, self.apply_modifiers, self.frame_start, self.frame_end)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -104,7 +107,7 @@ class K2_OT_mesh_exporter(bpy.types.Operator):
 
     def execute(self, context):
         from . import k2_export
-        k2_export.export_k2_mesh(context, self.filepath, self.apply_modifiers)
+        export_k2_mesh(context, self.filepath, self.apply_modifiers)
 
         return {'FINISHED'}
 

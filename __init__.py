@@ -42,13 +42,25 @@ else:
     print("init reload")
     import importlib
     from . import k2_import
+    from . import create_blender_mesh
+    from . import create_blender_clip
     from . import k2_export
+    from . import create_bone_data
+    from . import create_mesh_data
+    from . import export_k2_mesh
+    from . import export_k2_clip
     from . import operators
     from . import mat_utils
     # from .operators import K2ImporterClip, K2Importer, K2ClipExporter, K2MeshExporter
 
     importlib.reload(k2_import)
+    importlib.reload(create_blender_mesh)
+    importlib.reload(create_blender_clip)
     importlib.reload(k2_export)
+    importlib.reload(create_bone_data)
+    importlib.reload(create_mesh_data)
+    importlib.reload(export_k2_mesh)
+    importlib.reload(export_k2_clip)
     importlib.reload(operators)
     importlib.reload(mat_utils)
     # importlib.reload(K2ImporterClip)
