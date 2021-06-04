@@ -21,15 +21,14 @@
 bl_info = {
     "name": "K2 Model/Animation Import-Export",
     "author": "Anton Romanov",
-    "version": (0, 1),
-    "blender": (2, 8, 0),
-    "location": "File > Import-Export > K2 model/clip",
+    "version": (0, 0, 1),
+    "blender": (2, 80, 0),
+    'category': 'Import-Export',
+    "location": "File > Import-Export",
     "description": "Import-Export meshes and animations used by K2 engine (Savage 2 and Heroes of Newerth games)",
-    "warning": "",
-    "wiki_url": "https://github.com/theli-ua/K2-Blender/wiki",
+    "doc_url": "https://github.com/theli-ua/K2-Blender/wiki",
     "tracker_url": "https://github.com/theli-ua/K2-Blender/issues",
-    "support": "TESTING",
-    "category": "Import-Export"}
+    "support": "TESTING",}
 
 if "bpy" not in locals():
     print("init first load")
