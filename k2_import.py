@@ -108,7 +108,7 @@ def create_blender_mesh(filename, obj_name, flip_uv):
     bone_names = []
     parents = []
     for i in range(num_bones):
-        name = ''
+        group_name = ''
         parent_bone_index = read_int(hon_chunk)  # parent bone index
 
         if version == 3:
@@ -124,15 +124,15 @@ def create_blender_mesh(filename, obj_name, flip_uv):
                              struct.unpack('<3f', hon_chunk.read(12)) + (1.0,)))
 
             name_length = struct.unpack("B", hon_chunk.read(1))[0]  # length of the bone name string
-            name = hon_chunk.read(name_length)  # bone name
+            group_name = hon_chunk.read(name_length)  # bone name
 
             hon_chunk.read(1)  # zero
         elif version == 1:
-            name = ''
+            group_name = ''
             pos = hon_chunk.tell() - 4
             b = hon_chunk.read(1)
             while b != '\0':
-                name += b
+                group_name += b
                 b = hon_chunk.read(1)
             hon_chunk.seek(pos + 0x24)
             inv_matrix = Matrix((struct.unpack('<4f', hon_chunk.read(16)),  # transformation matrix 4x4 MAX
@@ -145,14 +145,14 @@ def create_blender_mesh(filename, obj_name, flip_uv):
                              struct.unpack('<4f', hon_chunk.read(16)),
                              struct.unpack('<4f', hon_chunk.read(16))))
 
-        name = name.decode()
-        log("bone name: %s,parent %d" % (name, parent_bone_index))
-        bone_names.append(name)
+        group_name = group_name.decode()
+        log("bone name: %s,parent %d" % (group_name, parent_bone_index))
+        bone_names.append(group_name)
         matrix.transpose()
         matrix = round_matrix(matrix, 4)
         pos = matrix.translation
         axis, roll = mat3_to_vec_roll(matrix.to_3x3())
-        bone = armature_data.edit_bones.new(name)
+        bone = armature_data.edit_bones.new(group_name)
         bone.head = pos
         bone.tail = pos + axis
         bone.roll = roll
@@ -276,12 +276,12 @@ def create_blender_mesh(filename, obj_name, flip_uv):
         if mode != 1 and False:  # SKIP_NON_PHYSIQUE_MESHES:
             continue
 
-        msh = bpy.data.meshes.new(name=mesh_name)
-        msh.from_pydata(verts, [], faces)
-        msh.update()
+        bpy_mesh = bpy.data.meshes.new(name=mesh_name)
+        bpy_mesh.from_pydata(verts, [], faces)
+        bpy_mesh.update()
 
         if material_name is not None:
-            msh.materials.append(bpy.data.materials.new(material_name))
+            bpy_mesh.materials.append(bpy.data.materials.new(material_name))
 
         if len(texc) > 0:
             if flip_uv:
@@ -293,56 +293,68 @@ def create_blender_mesh(filename, obj_name, flip_uv):
             for face in faces:
                 texcoords.extend([texc[vert_id] for vert_id in face])
 
-            # uvMain = createTextureLayer("UVMain", msh, texcoords)
+            # uvMain = createTextureLayer("UVMain", bpy_mesh, texcoords)
+            bpy_mesh.uv_layers.new()
+            uv_layer = bpy_mesh.uv_layers.active.data
 
-            uvtex = msh.uv_textures.new()
-            uvtex.name = 'UVMain' + mesh_name
-            uvloop = msh.uv_layers[-1]
-            for n, f in enumerate(texcoords):
-                uvloop.data[n].uv = f
+            for tris in bpy_mesh.polygons:
+                for loopIndex in range(tris.loop_start, tris.loop_start + tris.loop_total):
+                    vertex_index = bpy_mesh.loops[loopIndex].vertex_index
+                    uv_layer[loopIndex].uv = texcoords[vertex_index]
 
-        obj = bpy.data.objects.new('%s_Object' % mesh_name, msh)
+            # uvtex = bpy_mesh.uv_textures.new()
+            # uvtex.name = 'UVMain' + mesh_name
+            # uvloop = bpy_mesh.uv_layers[-1]
+            # for n, f in enumerate(texcoords):
+            #     uvloop.data[n].uv = f
+
+        bpy_object = bpy.data.objects.new('%s_Object' % mesh_name, bpy_mesh)
         # Link object to scene
-        scn.collection.objects.link(obj)
-        scn.objects.active = obj
+        scn.collection.objects.link(bpy_object)
+        # scn.objects.active = bpy_object
+        bpy.context.view_layer.objects.active = bpy_object
         # scn.update()
 
         if surf or mode != 1:
-            obj.draw_type = 'WIRE'
+            bpy_object.draw_type = 'WIRE'
         else:
             # vertex groups
             if bone_link >= 0:
-                grp = obj.vertex_groups.new(bone_names[bone_link])
-                grp.add(list(range(len(msh.vertices))), 1.0, 'REPLACE')
-            for name in v_groups.keys():
-                grp = obj.vertex_groups.new(name)
-                for (v, w) in v_groups[name]:
+                grp = bpy_object.vertex_groups.new(bone_names[bone_link])
+                grp.add(list(range(len(bpy_mesh.vertices))), 1.0, 'REPLACE')
+            for group_name in v_groups.keys():
+                grp = bpy_object.vertex_groups.new(name=group_name)
+                for (v, w) in v_groups[group_name]:
                     grp.add([v], w, 'REPLACE')
 
-            mod = obj.modifiers.new('MyRigModif', 'ARMATURE')
+            mod = bpy_object.modifiers.new('MyRigModif', 'ARMATURE')
             mod.object = rig
             mod.use_bone_envelopes = False
             mod.use_vertex_groups = True
 
             if False:  # removedoubles:
-                obj.select = True
+                bpy_object.select = True
                 bpy.ops.object.mode_set(mode='EDIT', toggle=False)
                 bpy.ops.mesh.remove_doubles()
                 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-                obj.select = False
+                bpy_object.select = False
 
-            bpy.context.scene.objects.active = rig
-            rig.select = True
+            # bpy.context.scene.objects.active = rig
+            # rig.select = True
+            bpy.context.view_layer.objects.active = rig
+            rig.select_set(True)
             bpy.ops.object.mode_set(mode='POSE', toggle=False)
             pose = rig.pose
             for b in pose.bones:
                 b.rotation_mode = "QUATERNION"
             bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-            rig.select = False
-        bpy.context.scene.objects.active = None
+            # rig.select = False
+            rig.select_set(False)
+        # bpy.context.scene.objects.active = None
+        bpy.context.view_layer.objects.active = None
 
     # scn.update()
-    return (obj, rig)
+    return (bpy_object, rig)
 
 
 ##############################
