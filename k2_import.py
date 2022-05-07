@@ -62,6 +62,7 @@ def parse_links(honchunk,bone_names):
             indexes = struct.unpack("<%dI" % num_weights,honchunk.read(num_weights * 4))
         else:
             weights = indexes = []
+            vlog("Missing weights!")
         for ii, index in enumerate(indexes):
             name = bone_names[index]
             if name not in vgroups:
@@ -150,7 +151,7 @@ def roundMatrix(mat,dec=17):
     fmat = []
     for row in mat:
         fmat.append(roundVector(row,dec))
-    return Matrix(fmat)    
+    return Matrix(fmat)
 
 def vec_roll_to_mat3(vec, roll):
     #Direct copy from https://coder-question.com/cq-blog/494393 
@@ -196,7 +197,7 @@ def vec_roll_to_mat3(vec, roll):
     rMatrix = Matrix.Rotation(roll, 3, nor)
 
     #Combine and output result
-    mat = rMatrix @ bMatrix
+    mat = rMatrix * bMatrix
     return mat
 
 def mat3_to_vec_roll(mat):
@@ -213,10 +214,11 @@ def mat3_to_vec_roll(mat):
     # print('  axis:\n%s' % str(axis))
     # print('  mat_3x3[2]:\n%s' % str(mat_3x3.col[2]))
 
-    zero_angle_matrix = vec_roll_to_mat3(axis, 0.0)
-    delta_matrix = zero_angle_matrix.inverted() @ mat_3x3
+    zero_angle_matrix = vec_roll_to_mat3(axis, 0)
+    delta_matrix = zero_angle_matrix.inverted() * mat_3x3
     angle = math.atan2(delta_matrix.col[2][0], delta_matrix.col[2][2])
     return axis, angle 
+
 def CreateBlenderMesh(filename, objname,flipuv):
     file = open(filename,'rb')
     if not file:
@@ -265,10 +267,9 @@ def CreateBlenderMesh(filename, objname,flipuv):
     armature_data = bpy.data.armatures.new('%s_Armature' % objname)
     armature_data.show_names = True
     rig = bpy.data.objects.new('%s_Rig' % objname, armature_data)
-    bpy.context.collection.objects.link(rig)
-    bpy.context.view_layer.objects.active = rig
-    #scn.objects.active = rig
-    rig.select_set(True)
+    scn.objects.link(rig)
+    scn.objects.active = rig
+    rig.select = True
 
     # armature = armature_object.getData()
     # if armature is None:
@@ -323,19 +324,12 @@ def CreateBlenderMesh(filename, objname,flipuv):
                      struct.unpack('<4f', honchunk.read(16))))
 
         name = name.decode()
-        
         bone_names.append(name)
         matrix.transpose()
         #matrix = roundMatrix(matrix,4)
         pos = matrix.translation
-        print("asd")
         axis, roll = mat3_to_vec_roll(matrix)
-        print(axis)
-        axis = matrix.col[1].to_3d()
-        print(axis)
 
-        t_mat, rot_quat, sc_mat = matrix.transposed().decompose()
-        print(rot_quat.angle)
         bone = armature_data.edit_bones.new(name)
         bone.head = pos
         bone.tail = pos + axis
@@ -350,9 +344,9 @@ def CreateBlenderMesh(filename, objname,flipuv):
     honchunk.skip()
 
     bpy.ops.object.mode_set(mode='OBJECT')
-    rig.show_in_front = True
+    rig.show_x_ray = True
     rig.update_tag()
-    bpy.context.view_layer.update()
+    scn.update()
 
     try:
         honchunk = chunk.Chunk(file,bigendian=0,align=0)
@@ -481,7 +475,7 @@ def CreateBlenderMesh(filename, objname,flipuv):
                 
             #uvMain = createTextureLayer("UVMain", msh, texcoords)
                             
-            uvtex = msh.uv_layers.new()
+            uvtex = msh.uv_textures.new()
             uvtex.name = 'UVMain' + meshname
             uvloop = msh.uv_layers[-1]
             for n,f in enumerate(texcoords):
@@ -490,10 +484,9 @@ def CreateBlenderMesh(filename, objname,flipuv):
 
         obj = bpy.data.objects.new('%s_Object' % meshname, msh)
         # Link object to scene
-        bpy.context.collection.objects.link(obj)
-        bpy.context.view_layer.objects.active = obj
-        #scn.objects.active = obj
-        bpy.context.view_layer.update()
+        scn.objects.link(obj)
+        scn.objects.active = obj
+        scn.update()
 
         if surf or mode != 1:
             obj.draw_type = 'WIRE'
@@ -503,7 +496,7 @@ def CreateBlenderMesh(filename, objname,flipuv):
                 grp = obj.vertex_groups.new(bone_names[bone_link])
                 grp.add(list(range(len(msh.vertices))),1.0,'REPLACE')
             for name in vgroups.keys():
-                grp = obj.vertex_groups.new(name=name)
+                grp = obj.vertex_groups.new(name)
                 for (v, w) in vgroups[name]:
                     grp.add([v], w, 'REPLACE')
             
@@ -514,26 +507,25 @@ def CreateBlenderMesh(filename, objname,flipuv):
 
 
             if False:#removedoubles:
-                obj.select_set(True)
+                obj.select = True
                 bpy.ops.object.mode_set(mode='EDIT', toggle=False)
                 bpy.ops.mesh.remove_doubles()
                 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-                obj.select_set(False)
-                
+                obj.select = False
 
 
-            bpy.context.view_layer.objects.active = rig
-            rig.select_set(True)
+            bpy.context.scene.objects.active = rig
+            rig.select = True
             bpy.ops.object.mode_set(mode='POSE', toggle=False)
             pose = rig.pose
             for b in pose.bones:
                 b.rotation_mode = "QUATERNION"
             bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-            rig.select_set(False)
-        bpy.context.view_layer.objects.active = None
+            rig.select = False
+        bpy.context.scene.objects.active = None
 
 
-    bpy.context.view_layer.update()
+    scn.update()
     return ( obj, rig )
 ############################## 
 #CLIPS
@@ -612,7 +604,7 @@ def getTransformMatrix(motions,bone,i,version):
     bone_rotation_matrix = Euler((math.radians(rx),math.radians(ry),math.radians(rz)),'YXZ').to_matrix().to_4x4()
 
     bone_rotation_matrix = Matrix.Translation(\
-        Vector((x,y,z))) @ bone_rotation_matrix
+        Vector((x,y,z))) * bone_rotation_matrix
 
     return bone_rotation_matrix,scale
     
@@ -628,7 +620,7 @@ def AnimateBone(name,pose,motions,num_frames,armature,armOb,version):
             parent_bone = bone.parent
             parent_rest_bone_matrix = Matrix(parent_bone.matrix_local)
             parent_rest_bone_matrix.invert()
-            bone_rest_matrix = parent_rest_bone_matrix @ bone_rest_matrix
+            bone_rest_matrix = parent_rest_bone_matrix * bone_rest_matrix
     
     bone_rest_matrix_inv = Matrix(bone_rest_matrix)
     bone_rest_matrix_inv.invert()
@@ -637,7 +629,7 @@ def AnimateBone(name,pose,motions,num_frames,armature,armOb,version):
     prev_euler = Euler()
     for i in range(0, num_frames):
         transform,size = getTransformMatrix(motions,bone,i,version)
-        transform = bone_rest_matrix_inv @ transform
+        transform = bone_rest_matrix_inv * transform
         pbone.rotation_quaternion = transform.to_quaternion()
         pbone.location =  (transform).to_translation()
         pbone.keyframe_insert(data_path='rotation_quaternion',frame=i)

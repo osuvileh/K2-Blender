@@ -383,11 +383,7 @@ def ClipBone(file,bone_name,motion,index):
             keydata.write(struct.pack('<%df' % numkeys,*key))
         write_block(file,'bmtn',keydata.getvalue())
 
-def export_k2_clip(filename, transform):
-    frame_start = IntProperty(name="Start Frame", description="Starting frame for the animation", default=bpy.context.scene.frame_start)
-    frame_end = IntProperty(name="Ending Frame", description="Ending frame for the animation",default=bpy.context.scene.frame_end)
-    #frame_start = bpy.context.scene.frame_start
-    #frame_end = bpy.context.scene.frame_end
+def export_k2_clip(filename, transform,frame_start,frame_end):
     objList = bpy.context.selected_objects
     if len(objList) != 1 or objList[0].type != 'ARMATURE':
         err('Select needed armature only')

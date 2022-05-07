@@ -23,12 +23,13 @@ bl_info = {
     "name": "K2 Model/Animation Import-Export",
     "author": "Anton Romanov",
     "version": (0, 1),
-    "blender": (2, 91, 0),
+    "blender": (2, 78, 0),
     "location": "File > Import-Export > K2 model/clip",
     "description": "Import-Export meshes and animations used by K2 engine (Savage 2 and Heroes of Newerth games)",
     "warning": "",
     "wiki_url": "https://github.com/theli-ua/K2-Blender/wiki",
     "tracker_url": "https://github.com/theli-ua/K2-Blender/issues",
+    "support": "TESTING",
     "category": "Import-Export"}
 
 if "bpy" in locals():
@@ -53,8 +54,8 @@ class K2ImporterClip(bpy.types.Operator):
     filter_glob = StringProperty(default="*.clip", options={'HIDDEN'})
 
     def execute(self, context):
-        from .k2_import import readclip
-        readclip(self.filepath)
+        from . import k2_import
+        k2_import.readclip(self.filepath)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -78,8 +79,8 @@ class K2Importer(bpy.types.Operator):
             )
 
     def execute(self, context):
-        from .k2_import import read as k2_read
-        k2_read(self.filepath,self.flipuv)
+        from . import k2_import
+        k2_import.read(self.filepath,self.flipuv)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -107,11 +108,12 @@ class K2ClipExporter(bpy.types.Operator):
             description="Use transformed mesh data from each object",
             default=True,
             )
-    #frame_start = IntProperty(name="Start Frame", description="Starting frame for the animation", default=bpy.context.scene.frame_start)
-    #frame_end = IntProperty(name="Ending Frame", description="Ending frame for the animation",default=bpy.context.scene.frame_end)
+    frame_start = IntProperty(name="Start Frame", description="Starting frame for the animation", default=0)
+    frame_end = IntProperty(name="Ending Frame", description="Ending frame for the animation",default=1)
     def execute(self, context):
-        from .k2_export import export_k2_clip
-        export_k2_clip(self.filepath,self.apply_modifiers)
+        from . import k2_export
+        k2_export.export_k2_clip(self.filepath,self.apply_modifiers,
+                self.frame_start,self.frame_end)
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -143,8 +145,8 @@ class K2MeshExporter(bpy.types.Operator):
             )
 
     def execute(self, context):
-        from .k2_export import export_k2_mesh
-        export_k2_mesh(self.filepath,
+        from . import k2_export
+        k2_export.export_k2_mesh(self.filepath,
                 self.apply_modifiers
                          )
 
@@ -167,31 +169,19 @@ def menu_export(self, context):
     self.layout.operator(K2MeshExporter.bl_idname, text="K2 Mesh (.model)")
     self.layout.operator(K2ClipExporter.bl_idname, text="K2 Clip (.clip)")
 
-classes = (
-        K2MeshExporter,
-        K2ClipExporter,
-        K2Importer,
-        K2ImporterClip,
-    )
 
 def register():
-    
-    from bpy.utils import register_class
-    for cls in classes:
-        register_class(cls)
-    #register, unregister = bpy.utils.register_classes_factory(classes)
-    #bpy.utils.register_module(__name__)
-    bpy.types.TOPBAR_MT_file_import.append(menu_import)
-    bpy.types.TOPBAR_MT_file_export.append(menu_export)
+    bpy.utils.register_module(__name__)
+
+    bpy.types.INFO_MT_file_import.append(menu_import)
+    bpy.types.INFO_MT_file_export.append(menu_export)
 
 
 def unregister():
-    from bpy.utils import unregister_class
-    for cls in classes:
-        unregister_class(cls)
-    #bpy.utils.unregister_module(__name__)
-    bpy.types.TOPBAR_MT_file_import.remove(menu_import)
-    bpy.types.TOPBAR_MT_file_export.remove(menu_export)
+    bpy.utils.unregister_module(__name__)
+
+    bpy.types.INFO_MT_file_import.remove(menu_import)
+    bpy.types.INFO_MT_file_export.remove(menu_export)
 
 if __name__ == "__main__":
     register()
