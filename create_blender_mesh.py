@@ -120,7 +120,7 @@ def create_blender_mesh(filename, obj_name, flip_uv):
         log("bone name: %s,parent %d" % (group_name, parent_bone_index))
         bone_names.append(group_name)
         matrix.transpose()
-        matrix = round_matrix(matrix, 4)
+        #matrix = round_matrix(matrix, 4)
         pos = matrix.translation
         axis, roll = mat3_to_vec_roll(matrix.to_3x3())
         bone = armature_data.edit_bones.new(group_name)
@@ -285,7 +285,7 @@ def create_blender_mesh(filename, obj_name, flip_uv):
         bpy.context.view_layer.objects.active = bpy_object
         # scn.update()
 
-        if surf or mode != 1:
+        if surf or (mode != 1 and False):
             bpy_object.display_type = 'WIRE'
         else:
             # vertex groups
