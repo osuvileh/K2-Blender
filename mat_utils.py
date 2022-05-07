@@ -66,9 +66,20 @@ def vec_roll_to_mat3(vec, roll):
 
 
 def mat3_to_vec_roll(mat):
-    vec = mat.col[1]
-    vec_mat = vec_roll_to_mat3(mat.col[1], 0)
-    vec_mat_inv = vec_mat.inverted()
-    roll_mat = vec_mat_inv @ mat
-    roll = math.atan2(roll_mat[0][2], roll_mat[2][2])
-    return vec, roll
+    """Computes rotation axis and its roll from a Matrix.
+
+    :param mat: Matrix
+    :type mat: Matrix
+    :return: Rotation axis and roll
+    :rtype: Vector and float
+    """
+    mat_3x3 = mat.to_3x3()
+    # print('  mat_3x3:\n%s' % str(mat_3x3))
+    axis = Vector(mat_3x3.col[1]).normalized()
+    # print('  axis:\n%s' % str(axis))
+    # print('  mat_3x3[2]:\n%s' % str(mat_3x3.col[2]))
+
+    zero_angle_matrix = vec_roll_to_mat3(axis, 0.0)
+    delta_matrix = zero_angle_matrix.inverted() @ mat_3x3
+    angle = math.atan2(delta_matrix.col[2][0], delta_matrix.col[2][2])
+    return axis, angle 
