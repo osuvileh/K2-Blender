@@ -1,4 +1,4 @@
-For blender 2.80+
+For blender 3+ (tested with 3.1)
 TODO(?):
     vertex colors import/export
     SURFs
