@@ -286,7 +286,7 @@ def create_blender_mesh(filename, obj_name, flip_uv):
         # scn.update()
 
         if surf or mode != 1:
-            bpy_object.draw_type = 'WIRE'
+            bpy_object.display_type = 'WIRE'
         else:
             # vertex groups
             if bone_link >= 0:
