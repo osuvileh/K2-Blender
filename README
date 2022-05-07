@@ -3,3 +3,5 @@ TODO(?):
     vertex colors import/export
     SURFs
     two-sided faces? (detect+merge on import, split on export)
+
+Fixes numeric instabilities in rig roll value computation for the most part. Some issues still remain
