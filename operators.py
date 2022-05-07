@@ -29,7 +29,8 @@ class K2_OT_mesh_importer(bpy.types.Operator):
     bl_idname = "k2.mesh_importer"
     bl_label = "Import K2 Mesh"
 
-    filepath: StringProperty(name='File Path', default='', maxlen=1024, subtype='FILE_PATH')
+    #Maximum filepath length in windows is 256
+    filepath: StringProperty(name='File Path', default='', subtype='FILE_PATH')
     filter_glob: StringProperty(default='*.model', options={'HIDDEN'})
     flipuv: BoolProperty(
         name="Flip UV",
