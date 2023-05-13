@@ -28,7 +28,7 @@ bl_info = {
     "description": "Import-Export meshes and animations used by K2 engine (Savage 2 and Heroes of Newerth games)",
     "doc_url": "https://github.com/theli-ua/K2-Blender/wiki",
     "tracker_url": "https://github.com/theli-ua/K2-Blender/issues",
-    "support": "Import-Export",}
+    "support": "COMMUNITY",}
 
 if "bpy" not in locals():
     print("init first load")
